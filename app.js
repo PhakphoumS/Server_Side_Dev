@@ -1,3 +1,11 @@
+// To scaffold out an Express application using the express-generator
+// Generating an Express application using the express-generator
+// npm install express-generator@4.16.0 -g
+// Scaffolding an Express Application
+// express conFusionServer      
+// npm install
+//npm start
+
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -10,6 +18,19 @@ var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var app = express();
+
+// from mongoose 
+const mongoose = require('mongoose');
+const Dishes = require('./models/dishes');
+const url = 'mongodb://localhost:27017/conFusion';
+const connect = mongoose.connect(url, {useNewUrlParser: true});
+
+connect.then((db) => {
+  console.log('Connected correctly to the server');
+}, (err) => {
+  console.log(err);
+});
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
