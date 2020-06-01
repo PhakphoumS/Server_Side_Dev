@@ -22,6 +22,9 @@ var app = express();
 // from mongoose 
 const mongoose = require('mongoose');
 const Dishes = require('./models/dishes');
+const Promotions = require('./models/promotions')
+const Leaders = require('./models/leaders');
+
 const url = 'mongodb://localhost:27017/conFusion';
 const connect = mongoose.connect(url, {useNewUrlParser: true});
 
@@ -40,6 +43,36 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+//check for auth before displaying
+function auth(req, res, next) {
+  console.log(req.headers);
+
+  var authHeader = req.headers.authorization;
+  if(!authHeader) {
+    var err = new Error('You are not authenticated!');
+    res.setHeader('WWW-Authenticate', 'Basic');
+    err.status = 401;
+    return next(err);
+  }
+  //split on empty space. 'Basic ALSDJ3#135lk'
+  //take only the encoded auth which is 'username:password' 
+  var auth = new Buffer(authHeader.split(' ')[1], 'base64').toString().split(':');
+  var username = auth[0];
+  var password = auth[1];
+
+  if (username === 'admin' && password === 'password') {
+    next();
+  } 
+  else {
+    var err = new Error('You are not authenticated!');
+    res.setHeader('WWW-Authenticate', 'Basic');
+    err.status = 401;
+    return next(err);
+  }
+}
+app.use(auth)
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
