@@ -17,9 +17,9 @@ var commentSchema = new Schema({
         type: String,
         required: true
     },
-    author:  {
-        type: String,
-        required: true
+    author:  { //using 'mongoose population' instead of string
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'   //reference to 'User Model'
     }
 }, {
     timestamps: true

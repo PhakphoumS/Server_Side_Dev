@@ -43,4 +43,4 @@ exports.jwtPassport = passport.use(new JwtStrategy(opts,
     }));
 
 exports.verifyUser = passport.authenticate('jwt', {session: false}); //jwt strategy
-
+// stores the req.user
