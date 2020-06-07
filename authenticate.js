@@ -6,7 +6,7 @@ var LocalStrategy = require('passport-local').Strategy;
 var User = require('./models/user');
 var JwtStrategy = require('passport-jwt').Strategy;
 var ExtractJwt = require('passport-jwt').ExtractJwt;
-var jwt = require('jsonwebtoken');
+var jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
 
 var config = require('./config');
 
@@ -16,8 +16,7 @@ passport.deserializeUser(User.deserializeUser());
 
 exports.getToken = function(user) {
     //help us to create jwt and supply a payload
-    return jwt.sign(user, config.secretKey, 
-        {expiresIn: 3600});
+    return jwt.sign(user, config.secretKey, {expiresIn: 3600});
 };
 
 var opts = {};
@@ -25,22 +24,32 @@ opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
 opts.secretOrKey = config.secretKey;
 
 // new JwtStrategy(options, verify)  authentication strategy
-exports.jwtPassport = passport.use(new JwtStrategy(opts, 
-    (jwt_payload, done) => {
-        console.log("JWT payload: ", jwt_payload);
-        User.findOne({_id: jwt_payload._id}, (err, user) => { 
-            if(err) { //call back which passport will pass into your strategy (done) on top
-                return done(err, false);   
-            }
-            else if (user) {
-                return done(null, user);
-            }
-            else {
-                // can't find user pass in false
-                return done(null, false);
-            }
-        });
-    }));
+exports.jwtPassport = passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
+    console.log("JWT payload: ", jwt_payload);
+    User.findOne({_id: jwt_payload._id}, (err, user) => { 
+        if(err) { //call back which passport will pass into your strategy (done) on top
+            return done(err, false);   
+        }
+        else if (user) {
+            return done(null, user);
+        }
+        else {
+            // can't find user pass in false
+            return done(null, false);
+        }
+    });
+}));
 
-exports.verifyUser = passport.authenticate('jwt', {session: false}); //jwt strategy
-// stores the req.user
+//jwt strategy stores the req.user   
+exports.verifyUser = passport.authenticate('jwt', {session: false}); 
+
+// check for admin privileges
+exports.verifyAdmin = (req, res, next) => {
+    if(req.user.admin) {
+        next();
+    } else {
+        var err = new Error('You are not authorized to perform this operation!');
+        err.status = 403;
+        return next(err);
+    }
+};

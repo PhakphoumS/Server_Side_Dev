@@ -22,7 +22,17 @@ var usersRouter = require('./routes/users');
 var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
+var uploadRouter = require('./routes/uploadRouter');
+
 var app = express();
+app.all('*', (req, res, next) => {//for all request coming in, redirect to..
+  if(req.secure) {
+    return next();
+  } else {
+    res.redirect(307,'https://'+ req.hostname + ':'+ app.get('secPort')+ req.url);
+    //req.url here contains the rest of part except hostname and port no.
+  }
+});
 
 // from mongoose 
 const mongoose = require('mongoose');
@@ -47,16 +57,6 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-//signed cookie with the 'secret key'
-//app.use(cookieParser('12345-67890-09876-54321'));
-// instead of cookieParser, use session
-// app.use(session({
-//   name: 'session-id',
-//   secret: '12345-67890-09876-54321',
-//   saveUninitialized: false,
-//   resave: false,
-//   store: new FileStore()
-// }));
 
 app.use(passport.initialize());
 //app.use(passport.session());
@@ -64,28 +64,13 @@ app.use(passport.initialize());
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-//check user for authentication before displaying static info
-// function auth (req, res, next) {
-//   console.log(req.user);
-
-//   if (!req.user) {
-//     var err = new Error('You are not authenticated!');
-//     err.status = 403;
-//     next(err);
-//   }
-//   else {
-//         next();
-//   }
-// }
-
-// app.use(auth)
-
 app.use(express.static(path.join(__dirname, 'public')));
 
-
+// configure END points
 app.use('/dishes', dishRouter);
 app.use('/promotions', promoRouter);
 app.use('/leaders', leaderRouter);
+app.use('/imageUpload', uploadRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
