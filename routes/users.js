@@ -61,7 +61,6 @@ router.post('/signup', cors.corsWithOptions, (req, res, next) => {
 router.post('/login', cors.corsWithOptions,  passport.authenticate('local'), (req, res) => {
   // here CREATE a TOKEN after Authenticated
   var token = authenticate.getToken({_id: req.user._id});
-
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
   res.json({success: true, token: token, status: 'You are successfully logged in!'});
@@ -72,11 +71,20 @@ router.get('/logout', (req, res) => {
     req.session.destroy();  //remove session from server side
     res.clearCookie('session-id');  // remove from client side
     res.redirect('/'); //redirect to homepage
-  }
-  else {
+  } else {
     var err = new Error('You are not logged in!');
     err.status = 403;
     next(err);
+  }
+});
+
+// when get req is called, authenticate using 'facebook-token' strategy
+router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res) => {
+  if(req.user) {
+    var token = authenticate.getToken({_id: req.user._id});
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.json({success: true, token: token, status: 'You are successfully logged in!'});
   }
 });
 
