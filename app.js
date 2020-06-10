@@ -23,6 +23,7 @@ var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var uploadRouter = require('./routes/uploadRouter');
+var favRouter = require('./routes/favRouter');
 
 var app = express();
 app.all('*', (req, res, next) => {//for all request coming in, redirect to..
@@ -59,7 +60,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use(passport.initialize());
-//app.use(passport.session());
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
@@ -71,6 +71,7 @@ app.use('/dishes', dishRouter);
 app.use('/promotions', promoRouter);
 app.use('/leaders', leaderRouter);
 app.use('/imageUpload', uploadRouter);
+app.use('/favorites', favRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

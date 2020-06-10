@@ -13,7 +13,7 @@ dishRouter.use(bodyParser.json());
 dishRouter.route('/')
 .options(cors.corsWithOptions, (req, res) => {res.sendStatus(200); })
 .get(cors.cors, (req,res,next) => {
-    Dishes.find({})
+    Dishes.find(req.query)
     .populate('comments.author')
     .then((dishes) => {
         res.statusCode = 200;
@@ -192,14 +192,21 @@ dishRouter.route('/:dishId/comments/:commentId')
 .put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     Dishes.findById(req.params.dishId)  
     .then((dish) => {
-        if (dish != null && dish.comments.id(req.params.commentId) != null &&
-            (req.user._id).equals(dish.comments.id(req.params.commentId).author._id)) {
-                //
+        var thisComment = dish.comments.id(req.params.commentId);
+        //verify if the user is the author of the comment
+        if(!thisComment.author._id.equals(req.user._id))
+        {
+            console.log(req.user._id);
+            var err = new Error('You are not the author of this comment');
+            err.status = 403;
+            return next(err);
+        }
+        if(dish != null && thisComment != null) {
             if(req.body.rating) { //allow only changes to rating and comment
-                dish.comments.id(req.params.commentId).rating = req.body.rating;
+                thisComment.rating = req.body.rating;
             }
             if(req.body.comment) {
-                dish.comments.id(req.params.commentId).comment = req.body.comment;
+                thisComment.comment = req.body.comment;
             }
             dish.save()
             .then((dish) => {
@@ -216,13 +223,6 @@ dishRouter.route('/:dishId/comments/:commentId')
             err.status = 404;
             return next(err);
         }
-        //------------------------------
-        else if(!(req.user._id).equals(dish.comments.id(req.params.commentId).author._id)){
-            var err = new Error('You are not authorized to perform this operation!');
-            err.status = 403;
-            return next(err);
-        }
-        //------------------------
         else {
             err = new Error('Comment ' + req.params.commentId + ' not found');
             err.status = 404;
@@ -234,18 +234,18 @@ dishRouter.route('/:dishId/comments/:commentId')
 .delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     Dishes.findById(req.params.dishId)  // removing comments from the dish
     .then((dish) => {
-        if (dish != null && dish.comments.id(req.params.commentId) != null && 
-        (req.user._id).equals(dish.comments.id(req.params.commentId).author._id)) {
-            // only creator can perform this operation
-            //  (if user's ID matches the id of the comment's author.)   
-            // if(!(dish.comments.id(req.params.commentId).author).equals(req.user._id)) {
-            //     var err = new Error('Only creator can perform this operation');
-            //     err.status = 403;
-            //     return next(err);
-            // }
 
+        var thisComment = dish.comments.id(req.params.commentId);
+        //Verify if the user is the author of the comment
+        if(!thisComment.author._id.equals(req.user._id))
+        {
+            var err = new Error('You are not the author of this comment');
+            err.status = 403;
+            return next(err);
+        }
 
-            dish.comments.id(req.params.commentId).remove();   // only remove specific dish 
+        if(dish != null && thisComment != null) {
+            thisComment.remove(); // only remove specific dish 
             dish.save()
             .then((dish) => {
                 Dishes.findById(dish._id).populate('comments.author')
@@ -261,15 +261,6 @@ dishRouter.route('/:dishId/comments/:commentId')
             err.status = 404;
             return next(err);
         }
-
-        //-----------------
-        else if(!(req.user._id).equals(dish.comments.id(req.params.commentId).author._id)){
-            var err = new Error('You are not authorized to perform this operation!');
-            err.status = 403;
-            return next(err);
-        }
-        //---------------
-
         else {
             err = new Error('Comment ' + req.params.commentId + ' not found');
             err.status = 404;
